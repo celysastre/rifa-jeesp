@@ -1,0 +1,302 @@
+import { watchNumbers } from './firebase.js';
+
+const CONFIG = {
+  totalNumbers:    100,
+  pricePerNumber:  10,
+  whatsappNumber:  '5511934473466',
+};
+
+const state = {
+  selected:            new Set(),
+  numberStatus:        {},
+  buyer:               {},
+  currentReservation:  null,
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderGrid();
+  bindEvents();
+  startRealtimeSync();
+});
+
+/* =========================================
+   FIREBASE REAL-TIME SYNC
+   ========================================= */
+function startRealtimeSync() {
+  watchNumbers((statusMap) => {
+    state.numberStatus = statusMap;
+    syncGridWithStatus(statusMap);
+  });
+}
+
+function syncGridWithStatus(statusMap) {
+  for (let i = 1; i <= CONFIG.totalNumbers; i++) {
+    const btn = document.querySelector(`.num-btn[data-number="${i}"]`);
+    if (!btn) continue;
+
+    const status = statusMap[String(i)] || 'available';
+
+    if (btn.classList.contains('selected')) continue;
+
+    btn.classList.remove('sold', 'reserved');
+    btn.disabled = false;
+    btn.title = '';
+
+    if (status === 'sold') {
+      btn.classList.add('sold');
+      btn.disabled = true;
+      btn.title = 'Número já vendido';
+      state.selected.delete(i);
+    } else if (status === 'reserved') {
+      btn.classList.add('reserved');
+      btn.disabled = true;
+      btn.title = 'Reservado — aguardando pagamento';
+      state.selected.delete(i);
+    }
+  }
+  updateCart();
+}
+
+/* =========================================
+   GRID DE NUMEROS
+   ========================================= */
+function renderGrid() {
+  const grid = document.getElementById('numbers-grid');
+  grid.innerHTML = '';
+
+  for (let i = 1; i <= CONFIG.totalNumbers; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'num-btn';
+    btn.textContent = String(i).padStart(2, '0');
+    btn.dataset.number = i;
+    btn.addEventListener('click', () => handleNumberClick(i, btn));
+    grid.appendChild(btn);
+  }
+}
+
+function handleNumberClick(num, btn) {
+  const status = state.numberStatus[String(num)] || 'available';
+  if (status !== 'available') return;
+
+  if (state.selected.has(num)) {
+    state.selected.delete(num);
+    btn.classList.remove('selected');
+  } else {
+    state.selected.add(num);
+    btn.classList.add('selected');
+  }
+  updateCart();
+}
+
+/* =========================================
+   CART
+   ========================================= */
+function updateCart() {
+  const count = state.selected.size;
+  const total = count * CONFIG.pricePerNumber;
+
+  document.getElementById('cart-count').textContent = count;
+  document.getElementById('cart-total').textContent = formatCurrency(total);
+  document.getElementById('btn-checkout').disabled = count === 0;
+}
+
+/* =========================================
+   EVENTS
+   ========================================= */
+function bindEvents() {
+  document.getElementById('btn-checkout').addEventListener('click', openFormModal);
+
+  document.getElementById('close-form').addEventListener('click', closeFormModal);
+  document.getElementById('modal-form').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeFormModal();
+  });
+
+  document.getElementById('close-pix').addEventListener('click', closePixModal);
+  document.getElementById('modal-pix').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closePixModal();
+  });
+
+  document.getElementById('buyer-form').addEventListener('submit', handleFormSubmit);
+  document.getElementById('buyer-phone').addEventListener('input', maskPhone);
+  document.getElementById('btn-copy-pix').addEventListener('click', copyPix);
+}
+
+/* =========================================
+   FORM MODAL
+   ========================================= */
+function openFormModal() {
+  if (state.selected.size === 0) return;
+
+  const nums  = [...state.selected].sort((a, b) => a - b);
+  const total = state.selected.size * CONFIG.pricePerNumber;
+
+  document.getElementById('summary-numbers').textContent =
+    nums.map(n => String(n).padStart(2, '0')).join(', ');
+  document.getElementById('summary-total').textContent = formatCurrency(total);
+
+  openModal('modal-form');
+}
+
+function closeFormModal() { closeModal('modal-form'); }
+
+async function handleFormSubmit(e) {
+  e.preventDefault();
+
+  const name  = document.getElementById('buyer-name').value.trim();
+  const phone = document.getElementById('buyer-phone').value.trim();
+  const email = document.getElementById('buyer-email').value.trim();
+
+  clearError('buyer-name',  'err-name');
+  clearError('buyer-phone', 'err-phone');
+
+  let valid = true;
+  if (name.length < 3) {
+    showError('buyer-name', 'err-name', 'Informe seu nome completo.');
+    valid = false;
+  }
+  if (phone.replace(/\D/g, '').length < 10) {
+    showError('buyer-phone', 'err-phone', 'Informe um WhatsApp válido com DDD.');
+    valid = false;
+  }
+  if (!valid) return;
+
+  state.buyer = { name, phone, email };
+
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+
+  try {
+    const res = await fetch('/api/reserve', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        numbers:    [...state.selected],
+        buyerName:  name,
+        buyerPhone: phone,
+        buyerEmail: email,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao processar reserva.');
+
+    state.currentReservation = data;
+    closeFormModal();
+    openPixModal(data);
+
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML =
+      '<i class="fa-solid fa-pix" style="font-size:0.9em"></i> Ir para Pagamento via PIX';
+  }
+}
+
+/* =========================================
+   PIX MODAL (Mercado Pago)
+   ========================================= */
+function openPixModal(data) {
+  const nums = [...state.selected].sort((a, b) => a - b);
+
+  document.getElementById('pix-amount').textContent       = formatCurrency(data.total);
+  document.getElementById('pix-numbers-list').textContent =
+    nums.map(n => String(n).padStart(2, '0')).join(', ');
+
+  // QR Code gerado pelo Mercado Pago
+  const qrPlaceholder = document.getElementById('qr-placeholder');
+  if (data.pixQrCodeB64) {
+    qrPlaceholder.innerHTML =
+      `<img src="data:image/png;base64,${data.pixQrCodeB64}"
+            alt="QR Code PIX" class="qr-image" />`;
+  }
+
+  // Chave copia e cola
+  if (data.pixCopyPaste) {
+    document.getElementById('pix-key-value').value = data.pixCopyPaste;
+  }
+
+  buildWhatsAppLink(nums, data.total);
+  openModal('modal-pix');
+}
+
+function closePixModal() { closeModal('modal-pix'); }
+
+function buildWhatsAppLink(nums, total) {
+  const btn = document.getElementById('btn-whatsapp');
+  const msg = encodeURIComponent(
+    `Olá! Realizei o pagamento da rifa JEESP — E.E. Maria Augusta de Moraes.\n\n` +
+    `*Nome:* ${state.buyer.name}\n` +
+    `*WhatsApp:* ${state.buyer.phone}\n` +
+    `*Números:* ${nums.map(n => String(n).padStart(2, '0')).join(', ')}\n` +
+    `*Total pago:* ${formatCurrency(total)}\n\n` +
+    `Segue o comprovante PIX em anexo!`
+  );
+  btn.href = `https://wa.me/${CONFIG.whatsappNumber}?text=${msg}`;
+}
+
+/* =========================================
+   COPY PIX
+   ========================================= */
+function copyPix() {
+  const key = document.getElementById('pix-key-value').value;
+  const btn = document.getElementById('btn-copy-pix');
+
+  if (!key || key === '(chave pix aqui)') {
+    alert('Chave PIX não disponível.');
+    return;
+  }
+
+  const finish = () => {
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  };
+
+  navigator.clipboard.writeText(key).then(finish).catch(() => {
+    document.getElementById('pix-key-value').select();
+    document.execCommand('copy');
+    finish();
+  });
+}
+
+/* =========================================
+   HELPERS
+   ========================================= */
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function showError(inputId, errId, msg) {
+  const input = document.getElementById(inputId);
+  input.classList.add('error', 'input-shake');
+  document.getElementById(errId).textContent = msg;
+  setTimeout(() => input.classList.remove('input-shake'), 400);
+}
+
+function clearError(inputId, errId) {
+  document.getElementById(inputId).classList.remove('error');
+  document.getElementById(errId).textContent = '';
+}
+
+function formatCurrency(value) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function maskPhone(e) {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length >= 7)      v = v.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  else if (v.length >= 3) v = v.replace(/^(\d{2})(\d+)/, '($1) $2');
+  e.target.value = v;
+}

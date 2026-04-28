@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rifa JEESP 2026 — E.E. Maria Augusta de Moraes</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner container">
+
+      <div class="header-brand">
+        <img src="img/WhatsApp%20Image%202026-04-25%20at%2023.26.01.jpeg"
+             alt="Logo E.E. Maria Augusta de Moraes"
+             class="header-logo" />
+        <div class="header-text">
+          <h1 class="header-title">JEESP 2026</h1>
+          <p class="header-subtitle">
+            <i class="fa-solid fa-futbol"></i>
+            Futsal Feminino &mdash; E.E. Maria Augusta de Moraes
+          </p>
+        </div>
+      </div>
+
+      <a href="https://wa.me/5511934473466"
+         class="header-wa-btn"
+         target="_blank" rel="noopener"
+         aria-label="Falar no WhatsApp">
+        <i class="fa-brands fa-whatsapp"></i>
+        <span>Fale conosco</span>
+      </a>
+
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+
+        <!-- LEFT: texto -->
+        <div class="hero-left">
+          <span class="hero-tag">
+            <i class="fa-solid fa-ticket"></i> Rifa Beneficente
+          </span>
+
+          <h2 class="hero-title">
+            Apoie o Futsal<br>Feminino da nossa<br>
+            <span class="hero-title-accent">Escola!</span>
+          </h2>
+
+          <p class="hero-description">
+            Ajude a <strong>E.E. Maria Augusta de Moraes</strong> a participar dos
+            Jogos Escolares do Estado de S&atilde;o Paulo.
+            Cada n&uacute;mero custa <strong>R$&nbsp;10,00</strong>.
+          </p>
+
+          <!-- PRIZE -->
+          <div class="prize-card">
+            <div class="prize-inner">
+              <div class="prize-icon-wrap">
+                <i class="fa-solid fa-trophy"></i>
+              </div>
+              <div>
+                <div class="prize-label">Pr&ecirc;mio &uacute;nico</div>
+                <div class="prize-value">R$ 300,00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CTA WhatsApp -->
+          <a href="https://wa.me/5511934473466"
+             class="btn-wa-hero"
+             target="_blank" rel="noopener">
+            <i class="fa-brands fa-whatsapp"></i>
+            D&uacute;vidas? Fale no WhatsApp
+          </a>
+        </div>
+
+        <!-- RIGHT: fotos do time em collage -->
+        <div class="hero-right">
+          <div class="photo-collage">
+            <div class="photo-back">
+              <img src="img/WhatsApp%20Image%202026-04-25%20at%2023.26.01%20%281%29.jpeg"
+                   alt="Time Futsal Feminino" />
+            </div>
+            <div class="photo-front">
+              <img src="img/WhatsApp%20Image%202026-04-25%20at%2023.26.01%20%282%29.jpeg"
+                   alt="Time Futsal Feminino — JEESP 2026" />
+              <div class="photo-caption">
+                <i class="fa-solid fa-heart"></i> Nosso Time &mdash; JEESP 2026
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- WAVE DIVIDER -->
+  <div class="wave-divider" aria-hidden="true">
+    <svg viewBox="0 0 1440 54" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0 54L48 48C96 42 192 30 288 24C384 18 480 18 576 21C672 24 768 30 864 33C960 36 1056 36 1152 33C1248 30 1344 24 1392 21L1440 18V0H0Z" fill="#16a34a"/>
+    </svg>
+  </div>
+
+  <!-- NUMBERS SECTION -->
+  <section class="numbers-section">
+    <div class="container">
+
+      <div class="section-header">
+        <div class="section-tag">
+          <i class="fa-solid fa-hashtag"></i> Selecione seu(s) n&uacute;mero(s)
+        </div>
+        <h2 class="section-title">Escolha seus N&uacute;meros</h2>
+        <p class="section-desc">
+          Cada n&uacute;mero vale <strong>R$&nbsp;10,00</strong>. Pode escolher quantos quiser!
+        </p>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="dot dot-available"></span> Dispon&iacute;vel</span>
+        <span class="legend-item"><span class="dot dot-selected"></span> Selecionado</span>
+        <span class="legend-item"><span class="dot dot-reserved"></span> Reservado</span>
+        <span class="legend-item"><span class="dot dot-sold"></span> Vendido</span>
+      </div>
+
+      <div class="numbers-card">
+        <div class="numbers-grid" id="numbers-grid"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CART BAR -->
+  <div class="cart-bar" id="cart-bar">
+    <div class="container">
+      <div class="cart-info">
+        <span class="cart-count">
+          <i class="fa-solid fa-list-check"></i>
+          <strong id="cart-count">0</strong> n&uacute;mero(s) selecionado(s)
+        </span>
+        <span class="cart-total">Total: <strong id="cart-total">R$&nbsp;0,00</strong></span>
+      </div>
+      <button class="btn-primary" id="btn-checkout" disabled>
+        Reservar <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: DADOS DO COMPRADOR -->
+  <div class="modal-overlay" id="modal-form">
+    <div class="modal">
+      <button class="modal-close" id="close-form" aria-label="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h3 class="modal-title">
+        <i class="fa-solid fa-circle-user"></i> Seus Dados
+      </h3>
+      <p class="modal-subtitle">Preencha para reservar seus n&uacute;meros.</p>
+
+      <form id="buyer-form" novalidate>
+        <div class="form-group">
+          <label for="buyer-name">Nome completo <span class="required">*</span></label>
+          <input type="text" id="buyer-name" placeholder="Seu nome completo" autocomplete="name" required />
+          <span class="field-error" id="err-name"></span>
+        </div>
+        <div class="form-group">
+          <label for="buyer-phone">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp <span class="required">*</span>
+          </label>
+          <input type="tel" id="buyer-phone" placeholder="(11) 99999-9999" autocomplete="tel" required />
+          <span class="field-error" id="err-phone"></span>
+        </div>
+        <div class="form-group">
+          <label for="buyer-email">E-mail (opcional)</label>
+          <input type="email" id="buyer-email" placeholder="seu@email.com" autocomplete="email" />
+        </div>
+
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>N&uacute;meros selecionados:</span>
+            <span id="summary-numbers" class="summary-numbers-list">-</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Total a pagar:</span>
+            <strong id="summary-total">R$ 0,00</strong>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-full">
+          <i class="fa-solid fa-pix" style="font-size:0.9em"></i>
+          Ir para Pagamento via PIX
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PIX -->
+  <div class="modal-overlay" id="modal-pix">
+    <div class="modal">
+      <button class="modal-close" id="close-pix" aria-label="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h3 class="modal-title">
+        <i class="fa-solid fa-mobile-screen-button"></i> Pagar com PIX
+      </h3>
+
+      <div class="pix-steps">
+        <div class="pix-step">
+          <div class="step-num">1</div>
+          <p>Copie a chave PIX ou escaneie o QR Code</p>
+        </div>
+        <div class="pix-step">
+          <div class="step-num">2</div>
+          <p>Pague o valor exato indicado</p>
+        </div>
+        <div class="pix-step">
+          <div class="step-num">3</div>
+          <p>Envie o comprovante no WhatsApp</p>
+        </div>
+      </div>
+
+      <div class="pix-amount-box">
+        <span class="pix-amount-label">Valor a pagar</span>
+        <span class="pix-amount" id="pix-amount">R$ 0,00</span>
+      </div>
+
+      <div class="qr-placeholder" id="qr-placeholder">
+        <i class="fa-solid fa-qrcode qr-icon"></i>
+        <p>QR Code PIX</p>
+        <span class="qr-note">(ser&aacute; gerado ap&oacute;s configura&ccedil;&atilde;o)</span>
+      </div>
+
+      <div class="pix-key-box">
+        <label class="pix-key-label">Chave PIX</label>
+        <div class="pix-key-row">
+          <input type="text" class="pix-key-input" id="pix-key-value" value="(chave pix aqui)" readonly />
+          <button class="btn-copy" id="btn-copy-pix">
+            <i class="fa-solid fa-copy"></i> Copiar
+          </button>
+        </div>
+        <p class="pix-key-name">
+          <i class="fa-solid fa-user"></i> Favorecido: <strong>Maria Augusta de Moraes</strong>
+        </p>
+      </div>
+
+      <div class="pix-numbers-box">
+        <span class="pix-numbers-label">
+          <i class="fa-solid fa-hashtag"></i> Seus n&uacute;meros reservados:
+        </span>
+        <span class="pix-numbers-list" id="pix-numbers-list">-</span>
+      </div>
+
+      <a class="btn-whatsapp" id="btn-whatsapp" href="#" target="_blank" rel="noopener">
+        <i class="fa-brands fa-whatsapp"></i> Enviar Comprovante no WhatsApp
+      </a>
+
+      <p class="pix-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Ap&oacute;s o pagamento, envie o comprovante para confirmar sua reserva.
+        Os n&uacute;meros s&atilde;o garantidos somente ap&oacute;s a confirma&ccedil;&atilde;o.
+      </p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <img src="img/WhatsApp%20Image%202026-04-25%20at%2023.26.01.jpeg"
+           alt="Logo da Escola"
+           class="footer-logo" />
+      <p class="footer-school">Escola Estadual Maria Augusta de Moraes</p>
+      <p class="footer-event">
+        <i class="fa-solid fa-futbol"></i> Rifa JEESP 2026 &mdash; Futsal Feminino
+      </p>
+      <a href="https://wa.me/5511934473466"
+         class="footer-wa-link"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-whatsapp"></i>
+        D&uacute;vidas? Fale conosco &mdash; (11) 93447-3466
+      </a>
+
+      <div class="footer-divider"></div>
+
+      <p class="footer-dev">
+        Desenvolvido por
+        <a href="https://www.linkedin.com/in/marcely-sastre-97b39215a/"
+           target="_blank" rel="noopener"
+           class="footer-dev-link">
+          <i class="fa-brands fa-linkedin"></i> Marcely Sastre
+        </a>
+      </p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

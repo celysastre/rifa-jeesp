@@ -1,0 +1,13 @@
+{
+  "name": "app-rifas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "mercadopago": "^2.0.15"
+  }
+}
