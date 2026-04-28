@@ -1,7 +1,7 @@
 const { db } = require('./_firebase');
-const { MercadoPagoConfig, Payment } = require('mercadopago');
+const mercadopago = require('mercadopago');
 
-const mp = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+const mp = new mercadopago.MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
       });
     });
 
-    const payment    = new Payment(mp);
+    const payment    = new mercadopago.Payment(mp);
     const mpResponse = await payment.create({
       body: {
         transaction_amount: total,
