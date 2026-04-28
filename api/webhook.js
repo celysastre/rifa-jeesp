@@ -1,25 +1,22 @@
-import { db } from './_firebase.js';
+const { db } = require('./_firebase');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { type, data } = req.body;
-
-  // MP envia varios tipos de notificação; só interessa payment
   if (type !== 'payment') return res.status(200).end();
 
   const mpPaymentId = String(data?.id);
   if (!mpPaymentId) return res.status(400).end();
 
   try {
-    // Busca detalhes do pagamento direto na API do MP
     const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, {
       headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
     });
     const mpPayment = await mpRes.json();
 
     const reservationId = mpPayment.external_reference;
-    const mpStatus = mpPayment.status; // approved | pending | rejected | cancelled
+    const mpStatus      = mpPayment.status;
 
     if (!reservationId) return res.status(200).end();
 
@@ -30,20 +27,18 @@ export default async function handler(req, res) {
     const { numbers } = reservationDoc.data();
 
     if (mpStatus === 'approved') {
-      // Pagamento confirmado → marca números como vendidos
       await db.runTransaction(async (t) => {
         const statusRef = db.collection('numbers').doc('status');
-        const updates = {};
+        const updates   = {};
         numbers.forEach((n) => { updates[String(n)] = 'sold'; });
         t.set(statusRef, updates, { merge: true });
         t.update(reservationRef, { status: 'confirmed', mpPaymentId });
       });
 
     } else if (['rejected', 'cancelled'].includes(mpStatus)) {
-      // Pagamento falhou → libera os números de volta
       await db.runTransaction(async (t) => {
         const statusRef = db.collection('numbers').doc('status');
-        const updates = {};
+        const updates   = {};
         numbers.forEach((n) => { updates[String(n)] = 'available'; });
         t.set(statusRef, updates, { merge: true });
         t.update(reservationRef, { status: 'rejected' });
@@ -53,7 +48,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
 
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('webhook error:', err);
     return res.status(500).end();
   }
-}
+};

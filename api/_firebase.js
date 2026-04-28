@@ -1,5 +1,5 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
 
 if (!getApps().length) {
   initializeApp({
@@ -11,4 +11,4 @@ if (!getApps().length) {
   });
 }
 
-export const db = getFirestore();
+module.exports = { db: getFirestore() };
