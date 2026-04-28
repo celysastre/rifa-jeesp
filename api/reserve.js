@@ -1,7 +1,5 @@
 const { db } = require('./_firebase');
-const mercadopago = require('mercadopago');
-
-const mp = new mercadopago.MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+const { MercadoPagoConfig, Payment } = require('mercadopago');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -14,14 +12,14 @@ module.exports = async function handler(req, res) {
 
   const PRICE_PER_NUMBER = 10;
   const total = numbers.length * PRICE_PER_NUMBER;
+  const reservationRef = db.collection('reservations').doc();
 
   try {
-    const reservationRef = db.collection('reservations').doc();
-
+    // 1. Reserva os números no Firestore
     await db.runTransaction(async (t) => {
-      const statusRef  = db.collection('numbers').doc('status');
-      const statusDoc  = await t.get(statusRef);
-      const current    = statusDoc.exists ? statusDoc.data() : {};
+      const statusRef = db.collection('numbers').doc('status');
+      const statusDoc = await t.get(statusRef);
+      const current   = statusDoc.exists ? statusDoc.data() : {};
 
       for (const n of numbers) {
         if (current[String(n)] && current[String(n)] !== 'available') {
@@ -45,21 +43,35 @@ module.exports = async function handler(req, res) {
       });
     });
 
-    const payment    = new mercadopago.Payment(mp);
-    const mpResponse = await payment.create({
-      body: {
-        transaction_amount: total,
-        description:        `Rifa JEESP 2026 — números: ${numbers.join(', ')}`,
-        payment_method_id:  'pix',
-        payer: {
-          email:      buyerEmail || `${buyerPhone.replace(/\D/g, '')}@rifa.com`,
-          first_name: buyerName.split(' ')[0],
-          last_name:  buyerName.split(' ').slice(1).join(' ') || '-',
+    // 2. Cria pagamento no Mercado Pago
+    let mpResponse;
+    try {
+      const mp      = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+      const payment = new Payment(mp);
+
+      mpResponse = await payment.create({
+        body: {
+          transaction_amount: total,
+          description:        `Rifa JEESP 2026 — números: ${numbers.join(', ')}`,
+          payment_method_id:  'pix',
+          payer: {
+            email:      buyerEmail || `pagador@rifajeesp.com`,
+            first_name: buyerName.split(' ')[0],
+            last_name:  buyerName.split(' ').slice(1).join(' ') || 'Comprador',
+          },
+          notification_url:   `${process.env.BASE_URL}/api/webhook`,
+          external_reference: reservationRef.id,
         },
-        notification_url:   `${process.env.BASE_URL}/api/webhook`,
-        external_reference: reservationRef.id,
-      },
-    });
+      });
+    } catch (mpErr) {
+      // Se o MP falhar, libera os números de volta
+      console.error('MP error:', mpErr?.cause || mpErr);
+      const rollback = {};
+      numbers.forEach((n) => { rollback[String(n)] = 'available'; });
+      await db.collection('numbers').doc('status').set(rollback, { merge: true });
+      await reservationRef.update({ status: 'mp_error' });
+      return res.status(502).json({ error: 'Erro ao gerar pagamento PIX. Tente novamente.' });
+    }
 
     await reservationRef.update({ mpPaymentId: String(mpResponse.id) });
 
