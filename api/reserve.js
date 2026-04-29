@@ -65,12 +65,13 @@ module.exports = async function handler(req, res) {
       });
     } catch (mpErr) {
       // Se o MP falhar, libera os números de volta
-      console.error('MP error:', mpErr?.cause || mpErr);
+      const mpErrDetail = JSON.stringify(mpErr?.cause ?? mpErr?.message ?? mpErr);
+      console.error('MP error:', mpErrDetail);
       const rollback = {};
       numbers.forEach((n) => { rollback[String(n)] = 'available'; });
       await db.collection('numbers').doc('status').set(rollback, { merge: true });
       await reservationRef.update({ status: 'mp_error' });
-      return res.status(502).json({ error: 'Erro ao gerar pagamento PIX. Tente novamente.' });
+      return res.status(502).json({ error: `MP: ${mpErrDetail}` });
     }
 
     await reservationRef.update({ mpPaymentId: String(mpResponse.id) });
