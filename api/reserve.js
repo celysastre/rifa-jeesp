@@ -4,7 +4,7 @@ const { MercadoPagoConfig, Payment } = require('mercadopago');
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { numbers, buyerName, buyerPhone, buyerEmail } = req.body;
+  const { numbers, buyerName, buyerPhone, buyerCpf, buyerEmail } = req.body;
 
   if (!numbers?.length || !buyerName || !buyerPhone) {
     return res.status(400).json({ error: 'Dados incompletos.' });
@@ -35,6 +35,7 @@ module.exports = async function handler(req, res) {
         numbers,
         buyerName,
         buyerPhone,
+        buyerCpf:   buyerCpf || '',
         buyerEmail: buyerEmail || '',
         total,
         status:      'pending',
@@ -55,9 +56,10 @@ module.exports = async function handler(req, res) {
           description:        `Rifa JEESP 2026 — números: ${numbers.join(', ')}`,
           payment_method_id:  'pix',
           payer: {
-            email:      buyerEmail || `pagador@rifajeesp.com`,
-            first_name: buyerName.split(' ')[0],
-            last_name:  buyerName.split(' ').slice(1).join(' ') || 'Comprador',
+            email:          buyerEmail || `pagador@rifajeesp.com`,
+            first_name:     buyerName.split(' ')[0],
+            last_name:      buyerName.split(' ').slice(1).join(' ') || 'Comprador',
+            identification: { type: 'CPF', number: buyerCpf },
           },
           notification_url:   `${process.env.BASE_URL}/api/webhook`,
           external_reference: reservationRef.id,

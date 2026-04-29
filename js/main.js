@@ -119,6 +119,7 @@ function bindEvents() {
 
   document.getElementById('buyer-form').addEventListener('submit', handleFormSubmit);
   document.getElementById('buyer-phone').addEventListener('input', maskPhone);
+  document.getElementById('buyer-cpf').addEventListener('input', maskCpf);
   document.getElementById('btn-copy-pix').addEventListener('click', copyPix);
 }
 
@@ -145,10 +146,12 @@ async function handleFormSubmit(e) {
 
   const name  = document.getElementById('buyer-name').value.trim();
   const phone = document.getElementById('buyer-phone').value.trim();
+  const cpf   = document.getElementById('buyer-cpf').value.trim();
   const email = document.getElementById('buyer-email').value.trim();
 
   clearError('buyer-name',  'err-name');
   clearError('buyer-phone', 'err-phone');
+  clearError('buyer-cpf',   'err-cpf');
 
   let valid = true;
   if (name.length < 3) {
@@ -159,9 +162,13 @@ async function handleFormSubmit(e) {
     showError('buyer-phone', 'err-phone', 'Informe um WhatsApp válido com DDD.');
     valid = false;
   }
+  if (!validarCpf(cpf)) {
+    showError('buyer-cpf', 'err-cpf', 'Informe um CPF válido.');
+    valid = false;
+  }
   if (!valid) return;
 
-  state.buyer = { name, phone, email };
+  state.buyer = { name, phone, cpf, email };
 
   const submitBtn = e.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
@@ -175,6 +182,7 @@ async function handleFormSubmit(e) {
         numbers:    [...state.selected],
         buyerName:  name,
         buyerPhone: phone,
+        buyerCpf:   cpf.replace(/\D/g, ''),
         buyerEmail: email,
       }),
     });
@@ -299,4 +307,27 @@ function maskPhone(e) {
   if (v.length >= 7)      v = v.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
   else if (v.length >= 3) v = v.replace(/^(\d{2})(\d+)/, '($1) $2');
   e.target.value = v;
+}
+
+function maskCpf(e) {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length >= 10)     v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  else if (v.length >= 7) v = v.replace(/^(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+  else if (v.length >= 4) v = v.replace(/^(\d{3})(\d+)/, '$1.$2');
+  e.target.value = v;
+}
+
+function validarCpf(cpf) {
+  const c = cpf.replace(/\D/g, '');
+  if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += parseInt(c[i]) * (10 - i);
+  let r = (s * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(c[9])) return false;
+  s = 0;
+  for (let i = 0; i < 10; i++) s += parseInt(c[i]) * (11 - i);
+  r = (s * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(c[10]);
 }
