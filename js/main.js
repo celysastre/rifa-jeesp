@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
    FIREBASE REAL-TIME SYNC
    ========================================= */
 function startRealtimeSync() {
+  fetch('/api/cleanup', { method: 'POST' }).catch(() => {});
   watchNumbers((statusMap) => {
     state.numberStatus = statusMap;
     syncGridWithStatus(statusMap);
