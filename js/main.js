@@ -13,6 +13,7 @@ const state = {
   currentReservation:  null,
   unsubReservation:    null,
   pixTimer:            null,
+  pollTimer:           null,
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -215,7 +216,7 @@ function openPixModal(data) {
 
   document.getElementById('pix-amount').textContent       = formatCurrency(data.total);
   document.getElementById('pix-numbers-list').textContent =
-    nums.map(n => String(n).padStart(2, '0')).join(', ');
+    nums.map(n => String(n).padStart(2, '00')).join(', ');
 
   const qrPlaceholder = document.getElementById('qr-placeholder');
   if (data.pixQrCodeB64) {
@@ -230,25 +231,66 @@ function openPixModal(data) {
 
   openModal('modal-pix');
   startPixCountdown(10 * 60 * 1000, data.reservationId);
+  startPaymentPolling(data.reservationId, nums);
 
   if (state.unsubReservation) state.unsubReservation();
   state.unsubReservation = watchReservation(data.reservationId, (reservation) => {
     if (reservation.status === 'confirmed') {
-      stopPixCountdown();
-      if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
-      closeModal('modal-pix');
-      openSuccessModal(nums);
+      handlePaymentConfirmed(nums);
     } else if (reservation.status === 'expired') {
-      stopPixCountdown();
-      if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
-      closeModal('modal-pix');
-      alert('Tempo esgotado. Seus números foram liberados.');
+      handlePaymentExpired();
     }
   });
 }
 
+function handlePaymentConfirmed(nums) {
+  stopPixCountdown();
+  stopPaymentPolling();
+  if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
+
+  const box = document.getElementById('pix-countdown-box');
+  box.innerHTML = '<i class="fa-solid fa-circle-check"></i> <strong>Pagamento confirmado! Concluído com sucesso.</strong>';
+  box.style.cssText = 'background:#dcfce7;color:#15803d;border-color:#86efac;';
+
+  setTimeout(() => {
+    closeModal('modal-pix');
+    box.innerHTML = '<i class="fa-solid fa-clock"></i> Reserva expira em: <strong id="pix-countdown">10:00</strong>';
+    box.style.cssText = '';
+    openSuccessModal(nums);
+  }, 2000);
+}
+
+function handlePaymentExpired() {
+  stopPixCountdown();
+  stopPaymentPolling();
+  if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
+  closeModal('modal-pix');
+  alert('Tempo esgotado. Seus números foram liberados.');
+}
+
+function startPaymentPolling(reservationId, nums) {
+  stopPaymentPolling();
+  state.pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/status?reservationId=${encodeURIComponent(reservationId)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === 'confirmed') {
+        handlePaymentConfirmed(nums);
+      } else if (data.status === 'rejected' || data.status === 'expired') {
+        handlePaymentExpired();
+      }
+    } catch (_) {}
+  }, 5000);
+}
+
+function stopPaymentPolling() {
+  if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
+}
+
 function closePixModal() {
   stopPixCountdown();
+  stopPaymentPolling();
   if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
   closeModal('modal-pix');
 }
