@@ -1,8 +1,8 @@
-import { watchNumbers } from './firebase.js';
+import { watchNumbers, watchReservation } from './firebase.js';
 
 const CONFIG = {
   totalNumbers:    100,
-  pricePerNumber:  10,
+  pricePerNumber:  20,
   whatsappNumber:  '5511934473466',
 };
 
@@ -11,6 +11,8 @@ const state = {
   numberStatus:        {},
   buyer:               {},
   currentReservation:  null,
+  unsubReservation:    null,
+  pixTimer:            null,
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -121,6 +123,10 @@ function bindEvents() {
   document.getElementById('buyer-phone').addEventListener('input', maskPhone);
   document.getElementById('buyer-cpf').addEventListener('input', maskCpf);
   document.getElementById('btn-copy-pix').addEventListener('click', copyPix);
+  document.getElementById('btn-success-close').addEventListener('click', closeSuccessModal);
+  document.getElementById('modal-success').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeSuccessModal();
+  });
 }
 
 /* =========================================
@@ -147,7 +153,6 @@ async function handleFormSubmit(e) {
   const name  = document.getElementById('buyer-name').value.trim();
   const phone = document.getElementById('buyer-phone').value.trim();
   const cpf   = document.getElementById('buyer-cpf').value.trim();
-  const email = document.getElementById('buyer-email').value.trim();
 
   clearError('buyer-name',  'err-name');
   clearError('buyer-phone', 'err-phone');
@@ -168,7 +173,7 @@ async function handleFormSubmit(e) {
   }
   if (!valid) return;
 
-  state.buyer = { name, phone, cpf, email };
+  state.buyer = { name, phone, cpf };
 
   const submitBtn = e.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
@@ -183,7 +188,6 @@ async function handleFormSubmit(e) {
         buyerName:  name,
         buyerPhone: phone,
         buyerCpf:   cpf.replace(/\D/g, ''),
-        buyerEmail: email,
       }),
     });
 
@@ -213,7 +217,6 @@ function openPixModal(data) {
   document.getElementById('pix-numbers-list').textContent =
     nums.map(n => String(n).padStart(2, '0')).join(', ');
 
-  // QR Code gerado pelo Mercado Pago
   const qrPlaceholder = document.getElementById('qr-placeholder');
   if (data.pixQrCodeB64) {
     qrPlaceholder.innerHTML =
@@ -221,28 +224,71 @@ function openPixModal(data) {
             alt="QR Code PIX" class="qr-image" />`;
   }
 
-  // Chave copia e cola
   if (data.pixCopyPaste) {
     document.getElementById('pix-key-value').value = data.pixCopyPaste;
   }
 
-  buildWhatsAppLink(nums, data.total);
   openModal('modal-pix');
+  startPixCountdown(10 * 60 * 1000, data.reservationId);
+
+  if (state.unsubReservation) state.unsubReservation();
+  state.unsubReservation = watchReservation(data.reservationId, (reservation) => {
+    if (reservation.status === 'confirmed') {
+      stopPixCountdown();
+      if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
+      closeModal('modal-pix');
+      openSuccessModal(nums);
+    } else if (reservation.status === 'expired') {
+      stopPixCountdown();
+      if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
+      closeModal('modal-pix');
+      alert('Tempo esgotado. Seus números foram liberados.');
+    }
+  });
 }
 
-function closePixModal() { closeModal('modal-pix'); }
+function closePixModal() {
+  stopPixCountdown();
+  if (state.unsubReservation) { state.unsubReservation(); state.unsubReservation = null; }
+  closeModal('modal-pix');
+}
 
-function buildWhatsAppLink(nums, total) {
-  const btn = document.getElementById('btn-whatsapp');
-  const msg = encodeURIComponent(
-    `Olá! Realizei o pagamento da rifa JEESP — E.E. Maria Augusta de Moraes.\n\n` +
-    `*Nome:* ${state.buyer.name}\n` +
-    `*WhatsApp:* ${state.buyer.phone}\n` +
-    `*Números:* ${nums.map(n => String(n).padStart(2, '0')).join(', ')}\n` +
-    `*Total pago:* ${formatCurrency(total)}\n\n` +
-    `Segue o comprovante PIX em anexo!`
-  );
-  btn.href = `https://wa.me/${CONFIG.whatsappNumber}?text=${msg}`;
+function openSuccessModal(nums) {
+  document.getElementById('success-numbers-list').textContent =
+    nums.map(n => String(n).padStart(2, '0')).join(', ');
+  state.selected.clear();
+  updateCart();
+  openModal('modal-success');
+}
+
+function closeSuccessModal() { closeModal('modal-success'); }
+
+function startPixCountdown(durationMs, reservationId) {
+  const endTime = Date.now() + durationMs;
+  const display = document.getElementById('pix-countdown');
+
+  stopPixCountdown();
+
+  state.pixTimer = setInterval(async () => {
+    const remaining = endTime - Date.now();
+    if (remaining <= 0) {
+      stopPixCountdown();
+      display.textContent = '00:00';
+      await fetch('/api/expire', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ reservationId }),
+      });
+      return;
+    }
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    display.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }, 1000);
+}
+
+function stopPixCountdown() {
+  if (state.pixTimer) { clearInterval(state.pixTimer); state.pixTimer = null; }
 }
 
 /* =========================================
