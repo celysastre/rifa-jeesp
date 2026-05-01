@@ -24,3 +24,10 @@ export function watchNumbers(callback) {
     callback(snap.exists() ? snap.data() : {});
   });
 }
+
+export function watchReservation(reservationId, callback) {
+  const ref = doc(db, 'reservations', reservationId);
+  return onSnapshot(ref, (snap) => {
+    if (snap.exists()) callback(snap.data());
+  });
+}

@@ -953,28 +953,31 @@ body {
 }
 
 .footer-dev {
-  font-size: 0.78rem;
-  color: var(--gray-600);
+  font-size: 1rem;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   flex-wrap: wrap;
+  letter-spacing: 0.01em;
 }
 
-.footer-dev-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #0a66c2;
-  font-weight: 600;
+.footer-dev strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.footer-dev a {
+  color: #ffffff;
   text-decoration: none;
-  transition: color 0.2s;
+  font-weight: 700;
 }
 
-.footer-dev-link i { font-size: 1rem; }
-
-.footer-dev-link:hover { color: #0077b5; }
+.footer-dev a:hover {
+  text-decoration: underline;
+}
 
 /* =========================================
    RESPONSIVE — 480px+
@@ -1059,3 +1062,51 @@ body {
 }
 
 .input-shake { animation: shake 0.28s ease; }
+
+/* =========================================
+   SUCCESS MODAL
+   ========================================= */
+.modal-success-box { text-align: center; }
+
+.success-icon-wrap {
+  font-size: 4rem;
+  color: var(--green);
+  margin-bottom: 0.75rem;
+  animation: successPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.success-title { color: var(--green-dark); margin-bottom: 0.5rem; }
+
+.success-msg {
+  color: var(--gray-600);
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+}
+
+/* =========================================
+   PIX COUNTDOWN
+   ========================================= */
+.pix-countdown-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  color: #92400e;
+  margin-bottom: 1rem;
+}
+
+.pix-countdown-box strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes successPop {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
